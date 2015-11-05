@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <libusb.h>
+#include <libusb-1.0/libusb.h>
 
 #include "versaloon_include.h"
 #include "versaloon.h"

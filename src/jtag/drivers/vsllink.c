@@ -29,7 +29,7 @@
 #include <jtag/interface.h>
 #include <jtag/commands.h>
 #include <jtag/swd.h>
-#include <libusb.h>
+#include <libusb-1.0/libusb.h>
 
 #include "versaloon/versaloon_include.h"
 #include "versaloon/versaloon.h"

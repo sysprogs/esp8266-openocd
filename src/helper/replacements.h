@@ -278,6 +278,7 @@ typedef struct {
 
 #endif	/* HAVE_ELF_H */
 
+#define HAVE_LIBUSB_ERROR_NAME
 #if defined HAVE_LIBUSB1 && !defined HAVE_LIBUSB_ERROR_NAME
 const char *libusb_error_name(int error_code);
 #endif /* defined HAVE_LIBUSB1 && !defined HAVE_LIBUSB_ERROR_NAME */

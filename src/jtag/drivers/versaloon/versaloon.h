@@ -20,7 +20,7 @@
 #ifndef __VERSALOON_H_INCLUDED__
 #define __VERSALOON_H_INCLUDED__
 
-#include <libusb.h>
+#include <libusb-1.0/libusb.h>
 
 struct usart_status_t {
 	uint32_t tx_buff_avail;

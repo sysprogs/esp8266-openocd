@@ -1459,7 +1459,7 @@ int Jim_MakeTempFile(Jim_Interp *interp, const char *template)
         filenameObj = Jim_NewStringObj(interp, template, -1);
     }
 
-    mask = umask(S_IXUSR | S_IRWXG | S_IRWXO);
+    mask = umask(S_IXUSR);
 
     /* Update the template name directly with the filename */
     fd = mkstemp(filenameObj->bytes);
