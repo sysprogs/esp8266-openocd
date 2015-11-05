@@ -1,4 +1,4 @@
-Sysprogs OpenOCD for ESP8266
+Sysprogs port of OpenOCD for ESP8266
 =================
 
 This repository contains an improved OpenOCD port for ESP8266 based on [this port](https://github.com/projectgus/openocd).
