@@ -57,7 +57,7 @@
 
 static int xtensa_read_register(struct target *target, int idx, int force);
 
-static bool s_DisableInterruptsForStepping = false;
+static bool s_DisableInterruptsForStepping = false, s_FeedWatchdogDuringStops = false;
 
 /*******************************************************************
  *                        Xtensa OCD TAP instructions              *
@@ -442,6 +442,8 @@ static int xtensa_init_target(struct command_context *cmd_ctx, struct target *ta
 	return ERROR_OK;
 }
 
+static void xtensa_feed_esp8266_watchdog(struct target *target);
+
 static int xtensa_poll(struct target *target)
 {
 	struct xtensa_common *xtensa = target_to_xtensa(target);
@@ -467,10 +469,13 @@ static int xtensa_poll(struct target *target)
 	}
 
 	if(dosr & (DOSR_IN_OCD_MODE)) {
-		if(target->state != TARGET_HALTED) {
-			if(target->state != TARGET_UNKNOWN && (dosr & DOSR_EXCEPTION) == 0) {
+		if (target->state != TARGET_HALTED)
+		{
+			if (target->state != TARGET_UNKNOWN && (dosr & DOSR_EXCEPTION) == 0)
+			{
 				LOG_WARNING("%s: DOSR has set InOCDMode without the Exception flag. Unexpected. DOSR=0x%02x",
-					    __func__, dosr);
+					__func__,
+					dosr);
 			}
 			int state = target->state;
 
@@ -479,9 +484,12 @@ static int xtensa_poll(struct target *target)
 			register_cache_invalidate(xtensa->core_cache);
 			xtensa_save_context(target);
 
-			if(state == TARGET_DEBUG_RUNNING) {
+			if (state == TARGET_DEBUG_RUNNING)
+			{
 				target_call_event_callbacks(target, TARGET_EVENT_DEBUG_HALTED);
-			} else {
+			}
+			else
+			{
 				//target->debug_reason is checked in gdb_last_signal() that is invoked as a result of calling target_call_event_callbacks() below.
 				//Unless we specify it, GDB will get confused and report the stop to the user on its internal breakpoints.
 				uint32_t dbgcause = buf_get_u32(xtensa->core_cache->reg_list[XT_REG_IDX_DEBUGCAUSE].value, 0, 32);
@@ -500,6 +508,11 @@ static int xtensa_poll(struct target *target)
 			LOG_INFO("halted: PC: 0x%" PRIx32, buf_get_u32(reg->value, 0, 32));
 			reg = &xtensa->core_cache->reg_list[XT_REG_IDX_DEBUGCAUSE];
 			LOG_INFO("debug cause: 0x%" PRIx32, buf_get_u32(reg->value, 0, 32));
+		}
+		else
+		{
+			if (s_FeedWatchdogDuringStops)
+				xtensa_feed_esp8266_watchdog(target);
 		}
 	} else if(target->state != TARGET_RUNNING && target->state != TARGET_DEBUG_RUNNING){
 		xtensa->state = XT_OCD_RUN;
@@ -1134,21 +1147,32 @@ static int xtensa_add_breakpoint(struct target *target, struct breakpoint *break
 	}
 
 	if (breakpoint->type == BKPT_SOFT) {
+		uint8_t *pBreakpointInsn = NULL;
+		char tmpBuf[16];
 		int res = xtensa_read_buffer(target, breakpoint->address, breakpoint->length, breakpoint->orig_instr);
 		if (res != ERROR_OK)
 			return res;
 		
 		if (breakpoint->length == sizeof(s_3ByteBreakpoint))
-			res = xtensa_write_buffer(target, breakpoint->address, breakpoint->length, s_3ByteBreakpoint);
+			pBreakpointInsn = s_3ByteBreakpoint;
 		else if (breakpoint->length == sizeof(s_2ByteBreakpoint))
-			res = xtensa_write_buffer(target, breakpoint->address, breakpoint->length, s_2ByteBreakpoint);
+			pBreakpointInsn = s_2ByteBreakpoint;
 		else
 		{
 			LOG_ERROR("Unexpected SW breakpoint size: %d", breakpoint->length);			
 			res = ERROR_TARGET_RESOURCE_NOT_AVAILABLE;
 		}
 		
-		return res;
+		res = xtensa_write_buffer(target, breakpoint->address, breakpoint->length, pBreakpointInsn);
+		if (res != ERROR_OK)
+			return res;
+		
+		res = xtensa_read_buffer(target, breakpoint->address, breakpoint->length, tmpBuf);
+		if (res == ERROR_OK && !memcmp(tmpBuf, pBreakpointInsn, breakpoint->length))
+			return res;
+		
+		breakpoint->type = BKPT_HARD;
+		LOG_WARNING("Cannot set a software breakpoint at 0x%x. Trying a hardware one instead...", breakpoint->address);
 	}
 
 	if (!xtensa->free_brps) {
@@ -1456,6 +1480,42 @@ static int xtensa_get_gdb_reg_list(struct target *target,
 	return ERROR_OK;
 }
 
+
+static void xtensa_feed_esp8266_watchdog(struct target *target)
+{
+	uint64_t wdtval = 0;
+	uint32_t wdtctl = 0;
+	int r;
+	r = xtensa_read_memory(target, 0x3ff21048, 4, 2, (uint8_t *)&wdtval);
+	if (r != ERROR_OK)
+	{
+		LOG_ERROR("failed to read wdtval: error %d", r);
+		return;
+	}
+		
+	wdtval += 1600000;
+	r = xtensa_write_memory(target, 0x3ff210cc, 4, 2, (uint8_t *)&wdtval);
+	if (r != ERROR_OK)
+	{
+		LOG_ERROR("failed to read wdtovf: error %d", r);
+		return;
+	}
+	
+	r = xtensa_read_memory(target, 0x3ff210c8, 4, 1, (uint8_t *)&wdtctl);
+	if (r != ERROR_OK)
+	{
+		LOG_ERROR("failed to read wdtctl: error %d", r);
+		return;
+	}
+	wdtctl |= (1 << 31);
+	r = xtensa_write_memory(target, 0x3ff210c8, 4, 1, (uint8_t *)&wdtctl);
+	if (r != ERROR_OK)
+	{
+		LOG_ERROR("failed to read wdtctl: error %d", r);
+		return;
+	}
+}
+
 static COMMAND_HELPER(xtensa_no_interrupts_during_steps, const char **sep, const char **name)
 {
 	if (CMD_ARGC > 1)
@@ -1468,6 +1528,18 @@ static COMMAND_HELPER(xtensa_no_interrupts_during_steps, const char **sep, const
 	return ERROR_OK;
 }
 
+static COMMAND_HELPER(esp8266_autofeed_watchdog, const char **sep, const char **name)
+{
+	if (CMD_ARGC > 1)
+		return ERROR_COMMAND_SYNTAX_ERROR;
+	if (CMD_ARGC == 1) 
+		COMMAND_PARSE_ENABLE(CMD_ARGV[0], s_FeedWatchdogDuringStops);
+	
+	command_print(CMD_CTX, "Watchdog feeding during stops is %s%s", (CMD_ARGC == 1) ? "now " : "", s_FeedWatchdogDuringStops ? "enabled" : "disabled");
+
+	return ERROR_OK;
+}
+
 struct command_registration xtensa_commands[] = {
 	{
 		.name = "xtensa_no_interrupts_during_steps",
@@ -1476,7 +1548,13 @@ struct command_registration xtensa_commands[] = {
 		.usage = "[enable|disable]",
 		.help = "Specifies whether the INTENABLE register will be set to 0 during single-stepping, temporarily disabling interrupts",
 	},
-	
+	{
+		.name = "esp8266_autofeed_watchdog",
+		.handler = &esp8266_autofeed_watchdog,
+		.mode = COMMAND_ANY,
+		.usage = "[enable|disable]",
+		.help = "Specifies whether OpenOCD will feed the ESP8266 software watchdog while the target is halted",
+	},
 	COMMAND_REGISTRATION_DONE
 };
 
