@@ -113,7 +113,7 @@ am__libtarget_la_SOURCES_DIST = algorithm.c register.c image.c \
 	nds32_reg.c nds32_cmd.c nds32_disassembler.c nds32_tlb.c \
 	nds32_v2.c nds32_v3_common.c nds32_v3.c nds32_v3m.c \
 	nds32_aice.c quark_x10xx.c lakemont.c x86_32_common.c avrt.c \
-	dsp563xx.c dsp563xx_once.c dsp5680xx.c hla_target.c
+	dsp563xx.c dsp563xx_once.c dsp5680xx.c hla_target.c xtensa.c
 am__objects_1 = algorithm.lo register.lo image.lo breakpoints.lo \
 	target.lo target_request.lo testee.lo smp.lo
 @OOCD_TRACE_TRUE@am__objects_2 = oocd_trace.lo
@@ -140,7 +140,7 @@ am_libtarget_la_OBJECTS = $(am__objects_1) $(am__objects_3) \
 	$(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	$(am__objects_8) $(am__objects_9) $(am__objects_10) \
 	$(am__objects_11) $(am__objects_12) avrt.lo dsp563xx.lo \
-	dsp563xx_once.lo dsp5680xx.lo hla_target.lo
+	dsp563xx_once.lo dsp5680xx.lo hla_target.lo xtensa.lo
 libtarget_la_OBJECTS = $(am_libtarget_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -443,7 +443,8 @@ libtarget_la_SOURCES = \
 	dsp563xx.c \
 	dsp563xx_once.c \
 	dsp5680xx.c \
-	hla_target.c
+	hla_target.c \
+	xtensa.c
 
 TARGET_CORE_SRC = \
 	algorithm.c \
@@ -707,6 +708,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fa526.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/feroceon.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hla_target.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtensa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lakemont.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mips32.Plo@am__quote@
