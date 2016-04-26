@@ -659,7 +659,8 @@ static int xtensa_step(struct target *target,
 	if (res == ERROR_OK)
 	{
 		int psValue = buf_get_u32(xtensa->core_cache->reg_list[XT_REG_IDX_PS].value, 0, 8);
-		if (psValue & 0x10)
+		int intLevel = psValue & 0x0f;
+		if ((psValue & 0x10) || (intLevel == 1))
 		{
 			//We are executing code in the exception mode. Setting ICOUNTLEVEL to 1 would step into the first instruction that gets executed after the exception handler is done.
 			//What we actually want is to step into the next instruction of the code we are debugging (i.e. an exception handler). Hence we ned to set ICOUNTLEVEL to 2 in order to count exception mode instructions as well.
