@@ -11,11 +11,6 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.           *
  ***************************************************************************/
 
 #ifndef XTENSA_H
@@ -35,8 +30,8 @@ struct xtensa_common {
 	enum xtensa_state state;
 	struct reg_cache *core_cache;
 
-	uint32_t num_brps; /* Number of breakpoints available */
-	uint32_t free_brps; /* Number of free breakpoints */
+	uint32_t num_brps;	/* Number of breakpoints available */
+	uint32_t free_brps;	/* Number of free breakpoints */
 	struct breakpoint **hw_brps;
 };
 
@@ -59,11 +54,11 @@ enum xt_reg_t {
 };
 
 struct xtensa_core_reg {
-	uint32_t idx; /* gdb server access index */
+	uint32_t idx;	/* gdb server access index */
 	const char *name;
-	uint8_t reg_num; /* ISA register num (meaning depends on register type) */
+	uint8_t reg_num;/* ISA register num (meaning depends on register type) */
 	enum xt_reg_t type;
 	struct target *target;
 };
 
-#endif /* XTENSA_H */
+#endif	/* XTENSA_H */
