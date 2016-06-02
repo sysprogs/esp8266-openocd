@@ -40,6 +40,7 @@ libtarget_la_SOURCES = \
 	dsp563xx.c \
 	dsp563xx_once.c \
 	dsp5680xx.c \
+	xtensa.c \
 	hla_target.c
 
 TARGET_CORE_SRC = \
