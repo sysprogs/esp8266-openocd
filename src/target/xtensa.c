@@ -1148,8 +1148,8 @@ static int xtensa_add_breakpoint(struct target *target, struct breakpoint *break
 	}
 
 	if (breakpoint->type == BKPT_SOFT) {
-		uint8_t *pBreakpointInsn = NULL;
-		char tmpBuf[16];
+		const uint8_t *pBreakpointInsn = NULL;
+		uint8_t tmpBuf[16];
 		int res = xtensa_read_buffer(target, breakpoint->address, breakpoint->length, breakpoint->orig_instr);
 		if (res != ERROR_OK)
 			return res;
@@ -1544,14 +1544,14 @@ static COMMAND_HELPER(esp8266_autofeed_watchdog, const char **sep, const char **
 struct command_registration xtensa_commands[] = {
 	{
 		.name = "xtensa_no_interrupts_during_steps",
-		.handler = &xtensa_no_interrupts_during_steps,
+		.handler = (command_handler_t) &xtensa_no_interrupts_during_steps,
 		.mode = COMMAND_ANY,
 		.usage = "[enable|disable]",
 		.help = "Specifies whether the INTENABLE register will be set to 0 during single-stepping, temporarily disabling interrupts",
 	},
 	{
 		.name = "esp8266_autofeed_watchdog",
-		.handler = &esp8266_autofeed_watchdog,
+		.handler = (command_handler_t) &esp8266_autofeed_watchdog,
 		.mode = COMMAND_ANY,
 		.usage = "[enable|disable]",
 		.help = "Specifies whether OpenOCD will feed the ESP8266 software watchdog while the target is halted",
